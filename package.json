@@ -9,7 +9,7 @@
     , "coffee-script": "1.2.x"
     , "underscore": "*"
     , "underscore.string": "*"
-    , "request": "*"
+    , "request": "2.9.x
     , "async": "*"
     , "zlib": "*"
   }
