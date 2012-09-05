@@ -8,16 +8,16 @@
 We'll pretend the following:
 
 * You have a Jenkins install at http://jenkins.mycompany.com
-* You have a GitHub organization called MyCompany
-* You have a GitHub account called MyCompany-bot
-* You have a repo you'd like pull requests on called FooBar
+* You have a GitHub organization called overmobile
+* You have a GitHub account called overmobile-jenkins
+* You have a repo you'd like pull requests on called captains
 
 ## Initial setup
 
 ### Clone the repo locally
 
 ```sh
-git clone git@github.com:cramerdev/jenkins-comments.git
+git clone git@github.com:overmobile/jenkins-comments.git
 cd jenkins-comments 
 ```
 
@@ -28,7 +28,7 @@ server. We'll also set the url of our Jenkins server. Chose a name
 (we'll use "mycompany-jenkins-comments" for the example), and create it:
 
 ```sh
-heroku create mycompany-jenkins-comments --stack cedar
+heroku create overmobile-jenkins-comments --stack cedar
 git push heroku master
 
 heroku addons:add redistogo:nano
@@ -44,10 +44,10 @@ heroku ps:dynos 1
 Create a new Authorization using the [GitHub Authorizations API](http://developer.github.com/v3/oauth/#create-a-new-authorization):
 
 ```sh
-curl -u "MyCompany-bot:password" https://api.github.com/authorizations \
+curl -u "overmobile-jenkins:password" https://api.github.com/authorizations \
   -H "Content-Type: application/json" \
   -X POST \
-  -d '{"scopes":["repo"],"note": "mycompany-jenkins-comments.herokuapp.com"}'
+  -d '{"scopes":["repo"],"note": "overmobile-jenkins-comments.herokuapp.com"}'
 ```
 
 ```json
@@ -59,7 +59,7 @@ curl -u "MyCompany-bot:password" https://api.github.com/authorizations \
   "note_url": null,
   "app": {
     "url": "http://developer.github.com/v3/oauth/#oauth-authorizations-api",
-    "name": "mycompany-jenkins-comments.herokuapp.com (API)"
+    "name": "overmobile-jenkins-comments.herokuapp.com (API)"
   },
   "url": "https://api.github.com/authorizations/369874",
   "token": "a55199221f3f66a7d238be5fa32e2cd84735ffc1",
@@ -91,12 +91,12 @@ In **Post-build Actions > Post build task > script**, we'll add a curl
 statement to post the job status to `mycompany-jenkins-comments.herokuapp.com`:
 
 ```sh
-curl "http://mycompany-jenkins-comments.herokuapp.com/jenkins/post_build\
-?user=MyCompany\
-&repo=FooBar\
+curl "http://overmobile-jenkins-comments.herokuapp.com/jenkins/post_build\
+?user=overmobile\
+&repo=captains\
 &sha=$GIT_COMMIT\
 &status=$BUILD_STATUS\
-&job_name=FooBar%20Tests\
+&job_name=captains\
 &job_number=$BUILD_NUMBER"
 ```
 
@@ -106,8 +106,8 @@ We'll use the [GitHub PubSubHubBub API](https://github.com/github/github-service
 events:
 
 ```sh
-curl -u "MyCompany-bot:password" https://api.github.com/hub \
+curl -u "overmobile-jenkins:password" https://api.github.com/hub \
   -Fhub.mode=subscribe \
-  -Fhub.topic=https://github.com/MyCompany/FooBar/events/pull_request \
-  -Fhub.callback=http://mycompany-jenkins-comments.herokuapp.com/github/post_receive
+  -Fhub.topic=https://github.com/overmobile/captains/events/pull_request \
+  -Fhub.callback=http://overmobile-jenkins-comments.herokuapp.com/github/post_receive
 ```
