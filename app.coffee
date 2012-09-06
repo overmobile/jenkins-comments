@@ -55,7 +55,7 @@ class PullRequestCommenter
       console.log e if e?
 
   setCommitStatus: (cb) ->
-    @post "/statuses/#{@sha}", (state: if @succeeded then "success" else "failure", target_url: "#{@job_url}"), (e, body) ->
+    @post "/statuses/#{@sha}", (state: (if @succeeded then "success" else "failure"), target_url: "#{@job_url}"), (e, body) ->
       return cb e if e?
 
   successComment: ->
