@@ -54,6 +54,10 @@ class PullRequestCommenter
     @post "/issues/#{issue}/comments", (body: comment), (e, body) ->
       console.log e if e?
 
+  setCommitStatus: (cb) ->
+    @post "/statuses/#{@sha}", (state: (@succeeded ? "success" : "failure"), target_url: "#{@job_url}"), (e, body) ->
+      return cb e if e?
+
   successComment: ->
     "#{BUILDREPORT} :green_heart: `Succeeded` (#{@sha}, [job info](#{@job_url}))"
 
@@ -83,6 +87,7 @@ class PullRequestCommenter
     comment = if @succeeded then @successComment() else @errorComment()
     @commentOnIssue pull.number, comment
     cb()
+
 
   updateComments: (cb) ->
     async.waterfall [
@@ -134,7 +139,7 @@ app.get '/jenkins/post_build', (req, res) ->
 
     # Look for an open pull request with this SHA and make comments.
     commenter = new PullRequestCommenter sha, job_name, job_number, user, repo, succeeded
-    commenter.updateComments (e, r) -> console.log e if e?
+    commenter.setCommitStatus (e, r) -> console.log e if e?
     res.send 200
   else
     res.send 400
