@@ -157,7 +157,7 @@ app.post '/github/post_receive', (req, res) ->
       obj.succeeded = (obj.succeeded == "true" ? true : false)
 
       commenter = new PullRequestCommenter sha, obj.job_name, obj.job_number, obj.user, obj.repo, obj.succeeded
-      commenter.updateComments (e, r) -> console.log e if e?
+      commenter.setCommitStatus (e, r) -> console.log e if e?
 
     res.send 201
   else
