@@ -14,7 +14,7 @@ else
 class PullRequestCommenter
   BUILDREPORT = "**Build Status**:"
 
-  constructor: (@sha, @job_name, @job_number, @user, @repo, @succeeded) ->
+  constructor: (@sha, @job_name, @job_number, @user, @repo, @status) ->
     @job_url = "#{process.env.JENKINS_URL}/job/#{@job_name}/#{@job_number}/console"
     @api = "https://api.github.com/repos/#{@user}/#{@repo}"
     @token = "?access_token=#{process.env.GITHUB_USER_TOKEN}"
@@ -54,8 +54,8 @@ class PullRequestCommenter
     @post "/issues/#{issue}/comments", (body: comment), (e, body) ->
       console.log e if e?
 
-  setCommitStatus: (cb) ->
-    @post "/statuses/#{@sha}", (state: (if @succeeded then "success" else "failure"), target_url: "#{@job_url}"), (e, body) ->
+  setCommitStatus: (cb) =>
+    @post "/statuses/#{@sha}", (state: @status, target_url: "#{@job_url}"), (e, body) ->
       return cb e if e?
 
   successComment: ->
@@ -84,7 +84,7 @@ class PullRequestCommenter
       , () -> cb null, pull
 
   makePullComment: (pull, cb) =>
-    comment = if @succeeded then @successComment() else @errorComment()
+    comment = if (@status is 'success') then @successComment() else @errorComment()
     @commentOnIssue pull.number, comment
     cb()
 
@@ -126,7 +126,7 @@ app.get '/jenkins/post_build', (req, res) ->
     job_number = parseInt req.param 'job_number'
     user = req.param 'user'
     repo = req.param 'repo'
-    succeeded = req.param('status') is 'success'
+    status = if (req.param('status') is 'success') then 'success' else 'failure'
 
     # Store the status of this sha for later
     redis.hmset sha, {
@@ -134,11 +134,11 @@ app.get '/jenkins/post_build', (req, res) ->
       "job_number": job_number,
       "user": user,
       "repo": repo,
-      "succeeded": succeeded
+      "status": status
     }
 
     # Look for an open pull request with this SHA and make comments.
-    commenter = new PullRequestCommenter sha, job_name, job_number, user, repo, succeeded
+    commenter = new PullRequestCommenter sha, job_name, job_number, user, repo, status
     commenter.setCommitStatus (e, r) -> console.log e if e?
     res.send 200
   else
@@ -153,10 +153,9 @@ app.post '/github/post_receive', (req, res) ->
 
     # Get the sha status from earlier and insta-comment the status
     redis.hgetall sha, (err, obj) ->
-      # Convert stored string to boolean
-      obj.succeeded = (obj.succeeded == "true" ? true : false)
+      obj.status ||= "pending"
 
-      commenter = new PullRequestCommenter sha, obj.job_name, obj.job_number, obj.user, obj.repo, obj.succeeded
+      commenter = new PullRequestCommenter sha, obj.job_name, obj.job_number, obj.user, obj.repo, obj.status
       commenter.setCommitStatus (e, r) -> console.log e if e?
 
     res.send 201
