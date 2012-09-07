@@ -154,6 +154,8 @@ app.post '/github/post_receive', (req, res) ->
     # Get the sha status from earlier and insta-comment the status
     redis.hgetall sha, (err, obj) ->
       obj.status ||= "pending"
+      obj.user ||= payload.pull_request.head.repo.owner.login
+      obj.repo ||= payload.pull_request.head.repo.name
 
       commenter = new PullRequestCommenter sha, obj.job_name, obj.job_number, obj.user, obj.repo, obj.status
       commenter.setCommitStatus (e, r) -> console.log e if e?
