@@ -13,6 +13,7 @@ else
 
 class PullRequestCommenter
   BUILDREPORT = "**Build Status**:"
+  USER_AGENT="overmobile-jenkins-comment (node.js/request) overmobile.ci@gmail.com"
 
   constructor: (@sha, @job_name, @job_number, @user, @repo, @status) ->
     @job_url = "#{process.env.JENKINS_URL}/job/#{@job_name}/#{@job_number}/console"
@@ -22,19 +23,19 @@ class PullRequestCommenter
   post: (path, obj, cb) =>
     console.log "POST #{@api}#{path}#{@token}"
     console.dir obj
-    request.post { uri: "#{@api}#{path}#{@token}", json: obj }, (e, r, body) ->
+    request.post { uri: "#{@api}#{path}#{@token}", json: obj, headers: {"User-Agent": USER_AGENT} }, (e, r, body) ->
       console.log body if process.env.DEBUG
       cb e, body
 
   get: (path, cb) =>
     console.log "GET #{@api}#{path}#{@token}"
-    request.get { uri: "#{@api}#{path}#{@token}", json: true }, (e, r, body) ->
+    request.get { uri: "#{@api}#{path}#{@token}", json: true, headers: {"User-Agent": USER_AGENT} }, (e, r, body) ->
       console.log body if process.env.DEBUG
       cb e, body
 
   del: (path, cb) =>
     console.log "DELETE #{@api}#{path}#{@token}"
-    request.del { uri: "#{@api}#{path}#{@token}" }, (e, r, body) ->
+    request.del { uri: "#{@api}#{path}#{@token}", headers: {"User-Agent": USER_AGENT} }, (e, r, body) ->
       console.log body if process.env.DEBUG
       cb e, body
 
